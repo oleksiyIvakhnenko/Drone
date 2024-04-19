@@ -10,7 +10,14 @@
 RF24 radio(6, 7); // Підключення пінів CE та CSN до 6 і 7 відповідно
 
 byte joystickX = A0;
-int xValue;
+// uint16_t xValue;
+unsigned int xValue = 0;
+unsigned int filtr;
+
+unsigned int toSend[] = {0};
+bool isActive = false;
+
+unsigned long tim2 = 0;
 
 void setup()
 {
@@ -20,15 +27,54 @@ void setup()
 
 void loop()
 {
-  String str = "joystickX=" + String(analogRead(joystickX));
-  int str_len = str.length() + 1;
-
-  Serial.println(str);
-
-
-  char text[str_len];
-  str.toCharArray(text, str_len);
-
   radio.openWritingPipe(0xF0F0F0F0E1LL); // Встановлення адреси отримувача
-  radio.write(&text, sizeof(text));      // Відправлення даних по радіоканалу
+
+  // int currentValues[] = {(millis()/1000)};
+
+  unsigned long _tmpTime = millis();
+
+  if (tim2 + 100 < _tmpTime)
+  {
+    xValue = analogRead(joystickX);
+    tim2 = _tmpTime;
+  }
+
+  int currentValues[] = {xValue};
+
+  for (int i = 0; i < (sizeof(toSend) / sizeof(int)); i++)
+  {
+    if (!(toSend[i] == currentValues[i]))
+    {
+Serial.println(currentValues[i]);
+
+      toSend[i] = currentValues[i];
+
+      isActive = true;
+    }
+  }
+
+  if (isActive)
+  {
+
+    String str = "";
+
+    unsigned int paramLength = (sizeof(toSend) / sizeof(unsigned int));
+
+    for (unsigned int i = 0; i < paramLength; i++)
+    {
+      str = str + String(toSend[i]);
+      if ((i + 1) < paramLength)
+      {
+        str = str + ",";
+      }
+    }
+
+    char text[str.length() + 1];
+    str.toCharArray(text, str.length() + 1);
+
+    Serial.println(str);
+    radio.write(&text, sizeof(text)); // Відправлення даних по радіоканалу
+
+    isActive = false;
+  }
 }
