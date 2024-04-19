@@ -19,6 +19,7 @@ int pValue = 0;
 
 void setup()
 {
+  Serial.begin(9600);
 
   radio.begin();
 
@@ -31,27 +32,38 @@ void setup()
 
 void loop()
 {
+  char text[32] = "";
   String sString;
+  String strs[] = {};
+  int stringCount = 0;
+
   if (radio.available())
   {
-    char text[32] = "";
     radio.read(&text, sizeof(text)); // Зчитування отриманих даних
 
     sString = String(text);
-    size_t found = sString.indexOf("=");
 
-    String key = sString.substring(0, found);    // get first part
-    String value = sString.substring(found + 1); // get second part
-
-    if (key == "joystickX")
+    // Split the string into substrings
+    while (sString.length() > 0)
     {
-      pValue = atoi(value.c_str());
+      int index = sString.indexOf(',');
+
+      if (index == -1) // No comma found
+      {
+        strs[stringCount++] = sString;
+        break;
+      }
+      else
+      {
+        strs[stringCount++] = sString.substring(0, index);
+        sString = sString.substring(index + 1);
+      }
     }
+
+    pValue = atoi(strs[0].c_str());
   }
 
   displayNumber(pValue);
-
-  // displayNumber(125);
 }
 
 void displayNumber(int num)

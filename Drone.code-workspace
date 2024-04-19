@@ -1,6 +1,9 @@
 {
 	"folders": [
 		{
+			"path": "."
+		},
+		{
 			"name": "ANanoTx",
 			"path": "ANanoTx"
 		},
